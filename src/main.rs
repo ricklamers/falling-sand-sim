@@ -5,13 +5,14 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use rand::Rng;
-use std::{io::stdout, time::Duration};
+use std::{io::stdout, time::Duration, io::Write};
 
 // Removed fixed dimensions; we'll use the full terminal size dynamically.
 
 const SAND_CHAR: char = '▪'; // Changed to a smaller block character
 const EMPTY_CHAR: char = ' ';
 const SPAWN_RATE: usize = 3; // Number of sand particles to spawn per frame
+const ENABLE_SYNC_OUTPUT: bool = true;  // Set to false to disable synchronized output sequences
 
 struct World {
     grid: Vec<char>,
@@ -78,6 +79,10 @@ impl World {
     }
 
     fn render(&mut self) {
+        // Conditionally enable synchronized output (begin synchronized update)
+        if ENABLE_SYNC_OUTPUT {
+            print!("\x1B[?2026h");
+        }
         // Clear screen and move cursor to top-left
         print!("\x1B[2J\x1B[1;1H");
         
@@ -89,12 +94,16 @@ impl World {
             for x in 0..self.width {
                 print!("{}", self.grid[y * self.width + x]);
             }
-            // Use a carriage return with line feed to minimize line spacing
             print!("\r\n");
         }
         
         // Re-enable line wrapping
         print!("\x1B[?7h");
+        // Conditionally end synchronized output (end synchronized update)
+        if ENABLE_SYNC_OUTPUT {
+            print!("\x1B[?2026l");
+        }
+        std::io::stdout().flush().unwrap();
     }
 }
 
